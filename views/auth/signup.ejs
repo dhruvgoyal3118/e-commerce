@@ -14,7 +14,7 @@
             <div class="form-control">
                 <label for="email">E-Mail</label>
                 <input 
-                    class="<%= validationErrors.find(e => e.param === 'email') ? 'invalid' : '' %>"
+                    class="<%= validationErrors.find(e => e.path === 'email') ? 'invalid' : '' %>"
                     type="email" 
                     name="email" 
                     id="email" 
@@ -23,7 +23,7 @@
             <div class="form-control">
                 <label for="username">Username</label>
                 <input 
-                    class="<%= validationErrors.find(e => e.param === 'username') ? 'invalid' : '' %>"
+                    class="<%= validationErrors.find(e => e.path === 'username') ? 'invalid' : '' %>"
                     type="text" 
                     name="username" 
                     id="username" 
@@ -32,7 +32,7 @@
             <div class="form-control">
                 <label for="password">Password</label>
                 <input 
-                    class="<%= validationErrors.find(e => e.param === 'password') ? 'invalid' : '' %>"
+                    class="<%= validationErrors.find(e => e.path === 'password'||e.path === 'confirmPassword') ? 'invalid' : '' %>"
                     type="password" 
                     name="password" 
                     id="password" 
@@ -41,7 +41,7 @@
             <div class="form-control">
                 <label for="confirmPassword">Confirm Password</label>
                 <input 
-                    class="<%= validationErrors.find(e => e.param === 'confirmPassword') ? 'invalid' : '' %>"
+                    class="<%= validationErrors.find(e => e.path === 'confirmPassword') ? 'invalid' : '' %>"
                     type="password" 
                     name="confirmPassword" 
                     id="confirmPassword" 
