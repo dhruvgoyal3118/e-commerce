@@ -43,7 +43,12 @@ router.post(
           }
         });
       })
-      .normalizeEmail(),
+    .normalizeEmail(),
+
+    body('username')
+    .trim()
+    .isLength({max:20})
+    .withMessage('Please enter a valid username.'),
     body(
       'password',
       'Please enter a password with only numbers and text and at least 5 characters.'

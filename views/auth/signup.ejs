@@ -21,6 +21,15 @@
                     value="<%= oldInput.email %>">
             </div>
             <div class="form-control">
+                <label for="username">Username</label>
+                <input 
+                    class="<%= validationErrors.find(e => e.param === 'username') ? 'invalid' : '' %>"
+                    type="text" 
+                    name="username" 
+                    id="username" 
+                    value="<%= oldInput.username %>">
+            </div>
+            <div class="form-control">
                 <label for="password">Password</label>
                 <input 
                     class="<%= validationErrors.find(e => e.param === 'password') ? 'invalid' : '' %>"
