@@ -247,6 +247,11 @@ form {
   background: rgb(255, 176, 176);
   color: red;
 }
+.user-message--total {
+  border-color: blue;
+  background: rgb(138, 204, 240);
+  color: blue;
+}
 .pagination{
   margin-top: 2rem;
   text-align: center;

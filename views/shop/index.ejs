@@ -6,6 +6,9 @@
     <%- include('../includes/navigation.ejs') %>
 
     <main>
+        <% if (totalMessage) { %>
+            <div class="user-message user-message--total"><%= totalMessage %></div>
+        <% } %>
         <% if (prods.length > 0) { %>
             <div class="grid">
                 <% for (let product of prods) { %>

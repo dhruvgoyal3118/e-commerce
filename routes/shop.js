@@ -31,5 +31,5 @@ router.get('/orders', isAuth, shopController.getOrders);
 
 router.get('/orders/:orderId',isAuth,shopController.getInvoice)
 
-
+router.get('/getTotal', isAuth, shopController.getTotal);
 module.exports = router;

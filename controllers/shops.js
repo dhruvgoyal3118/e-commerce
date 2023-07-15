@@ -2,7 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const Product = require("../models/product");
 const Order = require("../models/order");
+const Mongoose = require("mongoose");
 const PDFDocument = require('pdfkit');
+const { compareSync } = require("bcryptjs");
 const stripe = require('stripe')('sk_test_51NPk7cSCQ0RheH059SMkYhbgoHUz07jqCjdsamNZHxOK588TI8LQsuxvM8nwhMeDyNPfvmsLFnLuh6bfUcX4rSBV00QmKTHEaB');
 
 const ITEMS_PER_PAGE =1;
@@ -44,6 +46,12 @@ exports.getProduct = (req, res, next) => {
 exports.getIndex = (req, res, next) => {
   const page = req.query.page||1;
   let totalItems = 0;
+  let message = req.flash('total-message')||null;
+  if (message.length > 0) {
+    message = message[0];
+  } else {
+    message = null;
+  }
  Product.find().count().then(numProducts => {
     totalItems = numProducts;
     return Product.find()
@@ -60,7 +68,8 @@ exports.getIndex = (req, res, next) => {
         hasPreviousPage:page>1,
         nextPage:+page+1,
         previousPage:+page-1,
-        lastPage : Math.ceil(totalItems/ITEMS_PER_PAGE)
+        lastPage : Math.ceil(totalItems/ITEMS_PER_PAGE),
+        totalMessage: message
       });
     })
     .catch((err) => {
@@ -293,4 +302,25 @@ exports.getInvoice = (req, res, next) => {
       console.log(err);
       next(err);
     });
+};
+
+exports.getTotal = async (req,res,next) => {
+  const user = req.user;
+  console.log(user);
+  let totalSpent = 0;
+  const orders = await Order.find({'user.email': user.email});
+  console.log('boom!');
+  // console.log(orders);
+  orders.forEach((order) => {
+    order.products.forEach((orderItem) => {
+      let qty=orderItem.quantity;
+      let price = orderItem.product.price;
+      totalSpent += qty * price;
+      console.log('temp spent is '+totalSpent);
+    })
+  })
+  // console.log('total spent is '+totalSpent);
+  let message = `Your Total Amount Spent with us is $${totalSpent}. Happy Shopping!`;
+  req.flash('total-message', message);
+  return res.redirect('/');
 };
