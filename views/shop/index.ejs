@@ -28,6 +28,11 @@
                             <a href="/products/<%= product._id %>" class="btn">Details</a>
                             <% if (isAuthenticated) { %>
                                 <%- include('../includes/add-to-cart.ejs', {product: product}) %>
+                                <form action="/wishlist-add" method="post">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button class="btn" type="submit">Add to wishList</button>
+                                    <input type="hidden" name="productId" value="<%= product._id %>">
+                                </form>
                             <% } %>
                         </div>
                     </article>

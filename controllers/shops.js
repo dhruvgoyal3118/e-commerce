@@ -2,12 +2,11 @@ const fs = require("fs");
 const path = require("path");
 const Product = require("../models/product");
 const Order = require("../models/order");
-const Mongoose = require("mongoose");
+const User = require("../models/user");
 const PDFDocument = require('pdfkit');
-const { compareSync } = require("bcryptjs");
 const stripe = require('stripe')('sk_test_51NPk7cSCQ0RheH059SMkYhbgoHUz07jqCjdsamNZHxOK588TI8LQsuxvM8nwhMeDyNPfvmsLFnLuh6bfUcX4rSBV00QmKTHEaB');
 
-const ITEMS_PER_PAGE =1;
+const ITEMS_PER_PAGE =2;
 
 exports.getProducts = (req, res, next) => {
   Product.find()
@@ -30,6 +29,10 @@ exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
   Product.findById(prodId)
     .then((product) => {
+      if(!product)
+      {
+        throw new Error('Product not found');
+      }
       res.render("shop/product-detail", {
         product: product,
         pageTitle: product.title,
@@ -320,7 +323,166 @@ exports.getTotal = async (req,res,next) => {
     })
   })
   // console.log('total spent is '+totalSpent);
-  let message = `Your Total Amount Spent with us is $${totalSpent}. Happy Shopping!`;
+  let message = `Your Have Purchased Products worth $${totalSpent} so far. Happy Shopping!`;
   req.flash('total-message', message);
   return res.redirect('/');
+};
+
+exports.getWishlist = async(req,res,next) => {
+  try{
+  const users = await User.find();
+  return  res.render('shop/wishlist',{
+        path: "/wishlist",
+        pageTitle: "WishList",
+        users: users,
+  })}catch(err){
+    const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+  }
+};
+
+exports.getIndividualWishlist = async(req,res,next) => {
+  try{
+    console.log('individual wishlist')
+    const ownerId = req.params.ownerId;
+    const user  = req.user;
+    let hasControl = user._id.toString()===ownerId.toString()?true:false;
+    console.log(hasControl);
+    let owner   = await User.findById(ownerId);
+    if(!owner){
+      const error = new Error('Owner not found');
+      throw error;
+    }
+    owner= await owner.populate('wishlist.items.productId').execPopulate();
+    console.log(owner.wishlist.items.length);
+    console.log('fine');
+    return res.render('shop/wish',{
+        wishlist: owner.wishlist.items,
+        pageTitle: 'WishList',
+        path: "/wishlist",
+        hasControl: hasControl,
+        ownerId:ownerId.toString(),
+        userId:user._id.toString(),
+    })
+  }catch(err){
+    console.log(err);
+    const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+  }
+
+  
+};
+
+exports.addToWishlist = async (req,res,next)=>{
+  console.log('wishlist adder called');
+    const prodId = req.body.productId;
+    const user = req.user;
+    const product = await Product.findById(prodId);
+    // const wishlistIndex = user.wishlist.items.findIndex(item=>{
+    //   return item.productId.toString()===prodId.toString();
+    // });
+    // console.log(wishlistIndex);
+    // if(wishlistIndex>-1)
+    // return res.redirect(`/wishlist/${user._id}`);
+    await user.addToWishlist(product);
+    return res.redirect(`/wishlist/${user._id}`);
+    
+}
+
+exports.removeFromWishlist = async (req,res,next)=>{
+  const prodId = req.body.productId;
+  const user = req.user;
+  await user.removeFromWishlist(prodId);
+  return res.redirect(`/wishlist/${user._id}`)
+};
+
+
+
+exports.postGift = async (req, res,next)=>{
+  try{
+  const ownerId=  req.body.ownerId;
+  // const userId =  req.body.userId;
+  const prodId  = req.body.productId;
+  // const user = await User.findById(userId);
+  // const owner = await User.findById(ownerId);
+  const product   = await Product.findById(prodId);
+  let products=[],total=product.price;
+
+  console.log('Before gift renders 2')
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    mode: "payment",
+    line_items:[{
+      price_data:{
+        currency: 'usd',
+        product_data: {
+          name: product.title,
+          description:product.description,
+        },
+        unit_amount: product.price * 100,
+      },
+      quantity: 1
+    }],
+      success_url:`${req.protocol}://${req.get('host')}/gift-success/${ownerId}/${prodId}`,
+      cancel_url: `${req.protocol}://${req.get('host')}/wishlist`
+  });
+  console.log('Before gift renders 3');
+  products = [product];
+  console.log('Before gift renders 4');
+  console.log(session.id)
+  console.log(product)
+  return res.render("shop/checkout-gift", {
+    path: "/checkout",
+    pageTitle: "Checkout",
+    product: product,
+    totalSum: total,
+    sessionId: session.id
+  });
+}catch(err){
+  
+  console.log(err);
+  const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(error);
+}
+  
+}
+
+exports.postGiftComplete = async (req, res, next)=>{
+  try{
+    const userId = req.params.userId;
+    const productId = req.params.productId;
+    console.log('userId: ' + userId + ' productId: ' + productId);
+    const user = await User.findById(userId);
+    const product = await Product.findById(productId);
+    // req.user
+    // .populate("cart.items.productId")
+    // .execPopulate()
+    // .then((user) => {
+    //   const products = user.cart.items.map((i) => {
+    //     return { quantity: i.quantity, product: { ...i.productId._doc } };
+    //   });
+    let products =[{quantity:1,product: {...product}}]; 
+
+    const order = new Order({
+      user: {
+        email: user.email,
+        userId: user._id,
+      },
+      products: products,
+    });
+    console.log('order is ');
+    console.log(order);
+    console.log(order.products[0]);
+    await order.save();
+    let message = 'Thanks a Lot For Gifting and spreading happiness';
+    req.flash('total-message',message);
+    return res.redirect("/");
+  }catch(err){
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(error);
+  }
 };

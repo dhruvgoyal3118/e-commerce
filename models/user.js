@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
@@ -9,7 +9,7 @@ const userSchema = new Schema({
   },
   password: {
     type: String,
-    required: true
+    required: true,
   },
   username:{
     type: String,
@@ -22,13 +22,24 @@ const userSchema = new Schema({
       {
         productId: {
           type: Schema.Types.ObjectId,
-          ref: 'Product',
-          required: true
+          ref: "Product",
+          required: true,
         },
-        quantity: { type: Number, required: true }
-      }
-    ]
-  }
+        quantity: { type: Number, required: true },
+      },
+    ],
+  },
+  wishlist: {
+    items: [
+      {
+        productId: {
+          type: Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+      },
+    ],
+  },
 });
 
 userSchema.methods.addToCart = function(product) {
@@ -67,7 +78,33 @@ userSchema.methods.clearCart = function() {
   return this.save();
 };
 
-module.exports = mongoose.model('User', userSchema);
+userSchema.methods.addToWishlist = async function(product){
+    const wishlistProdutIndex = this.wishlist.items.findIndex(wp=>{
+      return wp.productId.toString() === product._id.toString();
+    });
+    if(wishlistProdutIndex>-1)
+    {
+      return this.save();
+    }
+    let updatedWishlistItems =[...this.wishlist.items];
+    updatedWishlistItems.push({productId: product._id});
+    const updatedwishlist = {
+      items: updatedWishlistItems,
+    }
+    this.wishlist =updatedwishlist;
+    return this.save();
+}
+
+userSchema.methods.removeFromWishlist = async function(productId){
+    const updatedWishlistItems = this.wishlist.items.filter(item=>{
+      return item.productId.toString()!==productId.toString();
+    })
+    // console.log(updatedWishlistItems);
+    this.wishlist.items =  updatedWishlistItems;
+    return this.save();
+}
+
+module.exports = mongoose.model("User", userSchema);
 
 // const mongodb = require('mongodb');
 // const getDb = require('../util/database').getDb;

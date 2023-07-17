@@ -32,4 +32,17 @@ router.get('/orders', isAuth, shopController.getOrders);
 router.get('/orders/:orderId',isAuth,shopController.getInvoice)
 
 router.get('/getTotal', isAuth, shopController.getTotal);
+
+router.get('/wishlist', isAuth, shopController.getWishlist);
+
+router.get('/wishlist/:ownerId', isAuth, shopController.getIndividualWishlist);
+
+router.post('/wishlist-add', isAuth, shopController.addToWishlist);
+
+router.post('/wishlist-delete', isAuth, shopController.removeFromWishlist);
+
+router.post('/gift',isAuth, shopController.postGift);
+
+router.get('/gift-success/:userId/:productId', isAuth, shopController.postGiftComplete);
+// gift-success
 module.exports = router;

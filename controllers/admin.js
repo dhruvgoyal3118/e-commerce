@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
 
 const Product = require('../models/product');
+const User = require('../models/user');
 
 const fileHelper = require('../util/file');
 
@@ -214,22 +215,53 @@ exports.getProducts = (req, res, next) => {
 //     return next(error);
 //   }).catch(err => {console.log(err);});
 // };
-exports.deleteProduct = (req, res, next) => {
-  const prodId = req.params.productId;
-  Product.findById(prodId).then(product=>{
+exports.deleteProduct =async(req, res, next) => {
+  // const prodId = req.params.productId;
+  // Product.findById(prodId)
+  // .then(product=>{
+  //   if(!product)
+  //   {
+  //     return next(new Error('Product not found'));
+  //   }
+  //   fileHelper.deleteFile(product.imageUrl);
+  //   return Product.deleteOne({ _id: prodId, userId: req.user._id })
+  // }) .then(()=>{
+  //   return req.user.removeFromCart(prodId);
+  // })
+  // .then(() => {
+  //   console.log('DESTROYED PRODUCT');
+  //   res.status(200).json({message:'success'})
+  // })
+  //   .catch(err => {
+  //     res.status(500).json({message:'deleting product failed'});
+  //   });
+
+  try{
+    console.log('I got Called Delete admin product');
+    const prodId = req.params.productId;
+    console.log(prodId);
+    const product=await Product.findById(prodId);
+ 
     if(!product)
     {
+      console.log('Product not found');
       return next(new Error('Product not found'));
     }
+    console.log(product);
     fileHelper.deleteFile(product.imageUrl);
-    return Product.deleteOne({ _id: prodId, userId: req.user._id })
-  }) .then(()=>{
-    return req.user.removeFromCart(prodId);
-  }).then(() => {
+    await Product.deleteOne({ _id: prodId, userId: req.user._id });
+    // delete products from everyones cart
+    const users = await User.find();
+    for(const user of users)
+    {
+      await user.removeFromCart(prodId);
+      await user.removeFromWishlist(prodId);
+    }
     console.log('DESTROYED PRODUCT');
     res.status(200).json({message:'success'})
-  })
-    .catch(err => {
-      res.status(500).json({message:'deleting product failed'});
-    });
+  }catch(err){
+    res.status(500).json({message:'deleting product failed'});
+  }
+
+   
 };
