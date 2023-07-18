@@ -67,11 +67,7 @@ app.use(
 app.use(csrfProtection);
 app.use(flash());
 
-app.use((req, res, next) => {
-  res.locals.isAuthenticated = req.session.isLoggedIn;
-  res.locals.csrfToken = req.csrfToken();
-  next();
-});
+
 
 app.use((req, res, next) => {
   // throw new Error('Sync Dummy');
@@ -90,7 +86,17 @@ app.use((req, res, next) => {
       next(new Error(err));
     });
 });
-
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  if(req.user)
+  {
+    res.locals.usernameNav = req.user.username;
+  }
+  else
+  res.locals.usernameNav =null;
+  next();
+});
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);

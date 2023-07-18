@@ -323,7 +323,7 @@ exports.getTotal = async (req,res,next) => {
     })
   })
   // console.log('total spent is '+totalSpent);
-  let message = `Your Have Purchased Products worth $${totalSpent} so far. Happy Shopping!`;
+  let message = `You Have Purchased Products worth $${totalSpent} so far. Happy Shopping!`;
   req.flash('total-message', message);
   return res.redirect('/');
 };
